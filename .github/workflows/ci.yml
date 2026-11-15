@@ -1,0 +1,50 @@
+name: CI
+
+# rustfmt, clippy, the tests and doc examples, the docs, and a cargo package
+# on Linux and macOS, on the toolchain rust-toolchain.toml pins. The crate has
+# no dependencies, so there is nothing to install beyond rustup's toolchain.
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: rustfmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: test
+        run: cargo test --locked
+
+      - name: docs
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --locked --no-deps
+
+      # The crate must stay publishable: it builds from the packaged sources alone.
+      - name: cargo package
+        if: runner.os == 'Linux'
+        run: cargo package --locked

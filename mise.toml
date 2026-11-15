@@ -1,0 +1,34 @@
+# The tasks contributors and CI run. Rust comes from rustup at the toolchain rust-toolchain.toml
+# pins, as in pantry; a global mise rust sets RUSTUP_TOOLCHAIN, which would win over the pin, so
+# every task unsets it. Keep the pins equal to pantry's.
+[tasks.build]
+description = "Build the crate on the pinned toolchain"
+run = "env -u RUSTUP_TOOLCHAIN cargo build --locked"
+
+[tasks.test]
+description = "The tests, then the doc examples"
+run = "env -u RUSTUP_TOOLCHAIN cargo test --locked"
+
+[tasks.lint]
+description = "rustfmt, clippy with warnings denied, and the docs with broken links denied (what CI runs)"
+run = [
+  "env -u RUSTUP_TOOLCHAIN cargo fmt --all --check",
+  "env -u RUSTUP_TOOLCHAIN cargo clippy --locked --all-targets -- -D warnings",
+  "env -u RUSTUP_TOOLCHAIN RUSTDOCFLAGS='-D warnings' cargo doc --locked --no-deps",
+]
+
+[tasks.coverage]
+description = "Line coverage of the tests (cargo-llvm-cov, installed by rustup component llvm-tools); fails under 90%"
+run = '''
+set -e
+unset RUSTUP_TOOLCHAIN
+rustup component add llvm-tools
+cargo llvm-cov --locked --fail-under-lines 90
+'''
+
+[tasks.package]
+description = "What crates.io would receive: list the packaged files and build the crate from them alone"
+run = [
+  "env -u RUSTUP_TOOLCHAIN cargo package --locked --list",
+  "env -u RUSTUP_TOOLCHAIN cargo package --locked",
+]

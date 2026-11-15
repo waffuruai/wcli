@@ -1,0 +1,4 @@
+target/
+# cargo-llvm-cov raw profiles, if a run is interrupted
+*.profraw
+.DS_Store
