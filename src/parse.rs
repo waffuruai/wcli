@@ -281,8 +281,22 @@ pub fn parse<S: AsRef<str>>(root: &Command, argv: &[S]) -> Result<Matches, Exit>
         return Err(fail(&chain, format!("missing command: one of {}", names.join(", "))));
     }
     let args = assign(&chain, &words)?;
-    if let Some(o) = in_scope(&chain).find(|o| o.required && !given.iter().any(|(n, _)| *n == o.name())) {
+    if let Some(o) = cmd.opts.iter().find(|o| o.required && !given.iter().any(|(n, _)| *n == o.name())) {
         return Err(fail(&chain, format!("missing required option '{}'", o.shown())));
+    }
+    for set in &cmd.one_of {
+        let shown = |n: &String| cmd.opts.iter().find(|o| o.name() == *n).map(Opt::shown).unwrap_or_default();
+        let have: Vec<&String> = set.iter().filter(|n| given.iter().any(|(g, _)| g == *n)).collect();
+        match have.as_slice() {
+            [] => {
+                let names: Vec<String> = set.iter().map(|n| format!("'{}'", shown(n))).collect();
+                return Err(fail(&chain, format!("one of options {} is required", names.join(", "))));
+            }
+            [_] => {}
+            [a, b, ..] => {
+                return Err(fail(&chain, format!("option '{}' cannot be used with option '{}'", shown(b), shown(a))));
+            }
+        }
     }
     if root.completes && chain.len() == 2 && cmd.name == "completions" {
         let shell = args.first().and_then(|(_, v)| v.first()).and_then(|s| s.parse::<crate::Shell>().ok());
