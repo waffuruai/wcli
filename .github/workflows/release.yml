@@ -2,8 +2,7 @@ name: Release
 
 # A vX.Y.Z tag on main publishes a GitHub Release with generated notes, after
 # the tag's version matches Cargo.toml and the crate packages. Publishing to
-# crates.io is by hand for now (README.md, Releasing); trusted publishing
-# comes once the crate exists there.
+# crates.io is by hand for now (README.md, Releasing).
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
