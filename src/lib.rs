@@ -43,9 +43,11 @@
 //!
 //! [commander.js]: https://github.com/tj/commander.js
 
+mod completions;
 mod help;
 mod parse;
 
+pub use completions::Shell;
 pub use help::WIDTH;
 pub use parse::Matches;
 
@@ -68,6 +70,7 @@ pub struct Opt {
     choices: Vec<String>,
     default: Option<String>,
     conflicts: Vec<String>,
+    required: bool,
     hidden: bool,
 }
 
@@ -104,6 +107,7 @@ impl Opt {
             choices: Vec::new(),
             default: None,
             conflicts: Vec::new(),
+            required: false,
             hidden: false,
         }
     }
@@ -123,6 +127,14 @@ impl Opt {
     /// Options (by name) it can't be given with.
     pub fn conflicts(mut self, names: &[&str]) -> Opt {
         self.conflicts.extend(names.iter().map(|n| n.to_string()));
+        self
+    }
+
+    /// It must be given: leaving it out is a usage error naming it, and the
+    /// help says so. Only an option that takes a value can be required.
+    pub fn required(mut self) -> Opt {
+        assert!(self.takes != Takes::Nothing, "wcli: a flag can't be required ({})", self.flags());
+        self.required = true;
         self
     }
 
@@ -237,6 +249,7 @@ pub struct Command {
     commands: Vec<Command>,
     needs_command: bool,
     hidden: bool,
+    completes: bool,
 }
 
 impl Command {
@@ -289,6 +302,11 @@ impl Command {
             opt.flags(),
             self.name
         );
+        assert!(
+            !(opt.required && opt.default.is_some()),
+            "wcli: option {} is required and has a default; it needs only one",
+            opt.flags()
+        );
         self.opts.push(opt);
         self
     }
@@ -335,6 +353,25 @@ impl Command {
     pub fn hide(mut self) -> Command {
         self.hidden = true;
         self
+    }
+
+    /// On the program: a `completions <shell>` command that prints a
+    /// completion script for bash, zsh or fish, generated from the command
+    /// tree. It comes back from [`Command::parse`] as [`Exit::Help`] with
+    /// the script, so `exit.exit()` prints it and exits 0.
+    pub fn completions(mut self) -> Command {
+        self.completes = true;
+        self.command(
+            Command::new("completions")
+                .description(completions::DESCRIPTION)
+                .arg(Arg::new("<shell>", "the shell").choices(&Shell::NAMES)),
+        )
+    }
+
+    /// The completion script for `shell`, generated from the command tree:
+    /// what [`Command::completions`] prints.
+    pub fn completion_script(&self, shell: Shell) -> String {
+        completions::script(self, shell)
     }
 
     pub fn name(&self) -> &str {

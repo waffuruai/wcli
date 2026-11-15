@@ -2,6 +2,13 @@
 
 Notable changes, newest first. Versions follow [semver](https://semver.org); every release is a `vX.Y.Z` tag on `main`.
 
+## 0.1.1 (2026-11-15)
+
+- `Opt::required()`: an option that must be given; leaving it out is a usage error naming it, and the help marks it `(required)`. A flag can't be required, and a required option can't have a default.
+- `Matches::count(name)`: how many times a flag was given, so `-vvv` is 3.
+- `Command::completions()`: a built-in `completions <shell>` command that prints a completion script for bash, zsh or fish, generated from the command tree; `Command::completion_script(Shell)` for the program's own use. Hidden commands and options are left out; aliases and the built-in `help`, `-h`, `-V` are in.
+- `examples/tool.rs`, a small program to try the help and the scripts with.
+
 ## 0.1.0 (2026-11-14)
 
 The first release, moved out of [pantry](https://github.com/waffuruai/pantry), where it was `wpantry`'s parser from 2026-11-05:

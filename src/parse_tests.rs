@@ -133,3 +133,47 @@ fn typos_are_close_and_strangers_are_not() {
     assert!(similar("x", ["json"].into_iter()).is_empty());
     assert_eq!(did_you_mean(&["a", "b"]), "\n(Did you mean one of a, b?)");
 }
+
+#[test]
+fn a_flag_is_counted() {
+    let p = Command::new("tool").option("-v, --verbose", "more").command(Command::new("run"));
+    assert_eq!(p.parse(&["run"]).unwrap().count("verbose"), 0);
+    assert_eq!(p.parse(&["run", "-v"]).unwrap().count("verbose"), 1);
+    assert_eq!(p.parse(&["run", "-vvv"]).unwrap().count("verbose"), 3);
+    assert_eq!(p.parse(&["-v", "run", "--verbose", "-v"]).unwrap().count("verbose"), 3);
+    assert_eq!(ok(&["report", "--path", "a", "--path", "b"]).count("path"), 2);
+}
+
+#[test]
+fn a_required_option_must_be_given() {
+    let p = Command::new("tool")
+        .command(Command::new("send").opt(Opt::new("--to <address>", "whom").required()).option("--cc <address>", ""));
+    assert_eq!(p.parse(&["send", "--to", "a@b"]).unwrap().value("to"), Some("a@b"));
+    match p.parse(&["send", "--cc", "x"]) {
+        Err(Exit::Error(t)) => {
+            assert!(
+                t.starts_with("Usage: tool send [options]\nerror: missing required option '--to <address>'\n"),
+                "{t}"
+            )
+        }
+        other => panic!("{other:?}"),
+    }
+    assert!(matches!(p.parse(&["send", "--help"]), Err(Exit::Help(_))), "help wins over the check");
+    assert!(
+        p.help_for(&["send"]).unwrap().contains("  --to <address>  whom (required)\n"),
+        "{}",
+        p.help_for(&["send"]).unwrap()
+    );
+}
+
+#[test]
+#[should_panic(expected = "a flag can't be required")]
+fn a_required_flag_is_a_bug() {
+    let _ = Opt::new("--yes", "").required();
+}
+
+#[test]
+#[should_panic(expected = "required and has a default")]
+fn a_required_option_with_a_default_is_a_bug() {
+    let _ = Command::new("tool").opt(Opt::new("--to <a>", "").required().default("x"));
+}
