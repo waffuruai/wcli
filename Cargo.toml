@@ -1,0 +1,22 @@
+# wcli: command-line parsing for Waffuru's Rust tools. No dependencies; the toolchain is the one
+# rust-toolchain.toml pins. Bump the version by PR; a vX.Y.Z tag on main releases it (README.md).
+[package]
+name = "wcli"
+description = "Command-line parsing for Waffuru's tools, after commander.js: a command tree from specs, help, suggestions, no dependencies"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/waffuruai/wcli"
+readme = "README.md"
+keywords = ["cli", "arguments", "parser", "subcommands"]
+categories = ["command-line-interface"]
+include = ["src/**", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
