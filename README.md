@@ -69,14 +69,14 @@ match m.path().as_slice() {
 
 ## Install
 
-Until the crate is on crates.io, depend on a release tag of this repository, pinned to the version it carries:
+From [crates.io](https://crates.io/crates/wcli):
 
 ```toml
 [dependencies]
-wcli = { git = "https://github.com/waffuruai/wcli.git", tag = "v0.1.0", version = "=0.1.0" }
+wcli = "0.1.0"
 ```
 
-Once published: `wcli = "=0.1.0"`. The crate needs Rust 1.97 or newer and nothing else.
+Waffuru's own tools pin it exactly (`wcli = "=0.1.0"`) and move on together. The crate needs Rust 1.97 or newer and nothing else.
 
 ## Development
 
@@ -102,7 +102,7 @@ Branches: pull requests go into `dev` (squash); `main` takes `dev` by a merge or
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
 
-[`release.yml`](.github/workflows/release.yml) checks the tag is on `main` and matches `Cargo.toml`, runs the tests, packages the crate and publishes a GitHub Release with generated notes and the `.crate` file. Publishing to crates.io is by hand for now, from the tag: `cargo publish --locked`. Dependents pin the tag (above) until then, and the crates.io version after.
+[`release.yml`](.github/workflows/release.yml) checks the tag is on `main` and matches `Cargo.toml`, runs the tests, packages the crate and publishes a GitHub Release with generated notes and the `.crate` file. Publishing to crates.io is by hand for now, from a checkout of the tag: `cargo publish --locked`, with a token that can publish updates. Then bump the pin in each dependent.
 
 ## License
 
