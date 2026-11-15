@@ -177,3 +177,65 @@ fn a_required_flag_is_a_bug() {
 fn a_required_option_with_a_default_is_a_bug() {
     let _ = Command::new("tool").opt(Opt::new("--to <a>", "").required().default("x"));
 }
+
+#[test]
+fn required_is_checked_on_the_command_that_runs_only() {
+    let p = Command::new("tool").command(
+        Command::new("shard")
+            .opt(Opt::new("--input <path>", "").required())
+            .opt(Opt::new("--family <name>", "").required())
+            .command(Command::new("verify").opt(Opt::new("--shards <path...>", "").required())),
+    );
+    assert!(p.parse(&["shard", "--input", "a", "--family", "x"]).is_ok());
+    assert!(
+        p.parse(&["shard", "verify", "--shards", "a", "b"]).is_ok(),
+        "the parent's required options are optional here"
+    );
+    assert_eq!(p.parse(&["shard", "verify", "--shards", "a", "--family", "x"]).unwrap().value("family"), Some("x"));
+    match p.parse(&["shard", "verify"]) {
+        Err(Exit::Error(t)) => assert!(t.contains("missing required option '--shards <path...>'"), "{t}"),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[test]
+fn exactly_one_of_a_set_must_be_given() {
+    let p = Command::new("tool").command(
+        Command::new("generate")
+            .option("--model <name>", "the catalog model")
+            .option("--checkpoint <path>", "a path to weights")
+            .option("--json", "")
+            .one_of(&["model", "checkpoint"]),
+    );
+    assert_eq!(p.parse(&["generate", "--model", "m"]).unwrap().value("model"), Some("m"));
+    assert_eq!(p.parse(&["generate", "--checkpoint", "p", "--json"]).unwrap().value("checkpoint"), Some("p"));
+    match p.parse(&["generate", "--json"]) {
+        Err(Exit::Error(t)) => {
+            assert!(t.ends_with("error: one of options '--model <name>', '--checkpoint <path>' is required\n"), "{t}")
+        }
+        other => panic!("{other:?}"),
+    }
+    match p.parse(&["generate", "--model", "m", "--checkpoint", "p"]) {
+        Err(Exit::Error(t)) => assert!(
+            t.ends_with("error: option '--checkpoint <path>' cannot be used with option '--model <name>'\n"),
+            "{t}"
+        ),
+        other => panic!("{other:?}"),
+    }
+    let help = p.help_for(&["generate"]).unwrap();
+    assert!(help.contains("  --model <name>       the catalog model (one of --model, --checkpoint)\n"), "{help}");
+    assert!(help.contains("  --checkpoint <path>  a path to weights (one of --model, --checkpoint)\n"), "{help}");
+    assert!(p.parse(&["generate", "--help"]).is_err_and(|e| matches!(e, Exit::Help(_))));
+}
+
+#[test]
+#[should_panic(expected = "names an option it doesn't have")]
+fn one_of_must_name_declared_options() {
+    let _ = Command::new("tool").option("--a <x>", "").one_of(&["a", "b"]);
+}
+
+#[test]
+#[should_panic(expected = "required and in a one_of set")]
+fn one_of_and_required_do_not_mix() {
+    let _ = Command::new("tool").opt(Opt::new("--a <x>", "").required()).option("--b <x>", "").one_of(&["a", "b"]);
+}

@@ -86,10 +86,14 @@ fn rows(title: &str, rows: &[(String, String)]) -> String {
 }
 
 /// What the help adds after an option's or argument's text.
-fn extras(choices: &[String], default: Option<&str>, required: bool) -> String {
+fn extras(choices: &[String], default: Option<&str>, required: bool, one_of: Option<&[String]>) -> String {
     let mut bits = Vec::new();
     if required {
         bits.push("required".to_string());
+    }
+    if let Some(set) = one_of {
+        let names: Vec<String> = set.iter().map(|n| format!("--{n}")).collect();
+        bits.push(format!("one of {}", names.join(", ")));
     }
     if !choices.is_empty() {
         bits.push(format!("choices: {}", choices.join(", ")));
@@ -129,7 +133,7 @@ pub fn help(chain: &[&Command]) -> String {
     let args: Vec<(String, String)> = cmd
         .args
         .iter()
-        .map(|a| (a.name.clone(), format!("{}{}", a.help, extras(&a.choices, a.default.as_deref(), false))))
+        .map(|a| (a.name.clone(), format!("{}{}", a.help, extras(&a.choices, a.default.as_deref(), false, None))))
         .collect();
     out.push_str(&rows("Arguments", &args));
     let mut opts: Vec<(String, String)> = cmd
@@ -141,7 +145,8 @@ pub fn help(chain: &[&Command]) -> String {
                 Takes::Value { .. } => o.default.as_deref(),
                 Takes::Nothing => None,
             };
-            (o.flags(), format!("{}{}", o.help, extras(&o.choices, default, o.required)))
+            let set = cmd.one_of.iter().find(|s| s.contains(&o.name())).map(Vec::as_slice);
+            (o.flags(), format!("{}{}", o.help, extras(&o.choices, default, o.required, set)))
         })
         .collect();
     if chain.len() == 1 && cmd.version.is_some() {
