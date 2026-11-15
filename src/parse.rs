@@ -34,6 +34,11 @@ impl Matches {
         self.given.iter().any(|(n, _)| n == name)
     }
 
+    /// How many times the option was given: `-vvv` is 3, left out is 0.
+    pub fn count(&self, name: &str) -> usize {
+        self.given.iter().filter(|(n, _)| n == name).count()
+    }
+
     /// The option's value: the last given, else its default.
     pub fn value(&self, name: &str) -> Option<&str> {
         self.given
@@ -276,6 +281,15 @@ pub fn parse<S: AsRef<str>>(root: &Command, argv: &[S]) -> Result<Matches, Exit>
         return Err(fail(&chain, format!("missing command: one of {}", names.join(", "))));
     }
     let args = assign(&chain, &words)?;
+    if let Some(o) = in_scope(&chain).find(|o| o.required && !given.iter().any(|(n, _)| *n == o.name())) {
+        return Err(fail(&chain, format!("missing required option '{}'", o.shown())));
+    }
+    if root.completes && chain.len() == 2 && cmd.name == "completions" {
+        let shell = args.first().and_then(|(_, v)| v.first()).and_then(|s| s.parse::<crate::Shell>().ok());
+        if let Some(shell) = shell {
+            return Err(Exit::Help(crate::completions::script(root, shell)));
+        }
+    }
     let opts = in_scope(&chain).map(|o| (o.name(), o.default.clone(), o.shown())).collect();
     Ok(Matches { path: chain.iter().map(|c| c.name.clone()).collect(), usage: help::usage(&chain), given, opts, args })
 }

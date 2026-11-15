@@ -86,8 +86,11 @@ fn rows(title: &str, rows: &[(String, String)]) -> String {
 }
 
 /// What the help adds after an option's or argument's text.
-fn extras(choices: &[String], default: Option<&str>) -> String {
+fn extras(choices: &[String], default: Option<&str>, required: bool) -> String {
     let mut bits = Vec::new();
+    if required {
+        bits.push("required".to_string());
+    }
     if !choices.is_empty() {
         bits.push(format!("choices: {}", choices.join(", ")));
     }
@@ -99,7 +102,7 @@ fn extras(choices: &[String], default: Option<&str>) -> String {
 
 /// A command's line in its parent's list: its summary, else the first
 /// sentence of its description.
-fn summary(c: &Command) -> String {
+pub(crate) fn summary(c: &Command) -> String {
     if let Some(s) = &c.summary {
         return s.clone();
     }
@@ -126,7 +129,7 @@ pub fn help(chain: &[&Command]) -> String {
     let args: Vec<(String, String)> = cmd
         .args
         .iter()
-        .map(|a| (a.name.clone(), format!("{}{}", a.help, extras(&a.choices, a.default.as_deref()))))
+        .map(|a| (a.name.clone(), format!("{}{}", a.help, extras(&a.choices, a.default.as_deref(), false))))
         .collect();
     out.push_str(&rows("Arguments", &args));
     let mut opts: Vec<(String, String)> = cmd
@@ -138,7 +141,7 @@ pub fn help(chain: &[&Command]) -> String {
                 Takes::Value { .. } => o.default.as_deref(),
                 Takes::Nothing => None,
             };
-            (o.flags(), format!("{}{}", o.help, extras(&o.choices, default)))
+            (o.flags(), format!("{}{}", o.help, extras(&o.choices, default, o.required)))
         })
         .collect();
     if chain.len() == 1 && cmd.version.is_some() {

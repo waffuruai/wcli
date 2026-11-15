@@ -46,7 +46,7 @@ match m.path().as_slice() {
 | `--tag <name...>` | Takes the words after it until the next option. Every option also collects a value each time it is repeated: `m.values("tag")` |
 | `<query>`, `[part]`, `<sample...>` | Arguments: required, optional, and the rest of the words. Read them with `m.arg("query")` and `m.args("sample")` |
 
-`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
+`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together), `.required()` (leaving it out is a usage error; the help says `(required)`) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
 
 - `.alias(..)`
 - `.summary(..)`, the command's line in its parent's list; without it, the first sentence of the description
@@ -54,6 +54,7 @@ match m.path().as_slice() {
 - `.subcommand_required()`
 - `.hide()`
 - `.opts(..)`, a set of options several commands share
+- `.completions()`, on the program: a `completions <shell>` command that prints a completion script for bash, zsh or fish, generated from the command tree (subcommands, aliases, options, choices); `completion_script(Shell)` gives the same text to the program
 
 ## What you get
 
@@ -63,9 +64,12 @@ match m.path().as_slice() {
 - With no words at all, the root's help.
 - Errors in one shape: the usage line, then `error: …`, then `(Did you mean --json?)` when a name is close. They come back as `Exit::Error`, exit code 2. Help and the version come back as `Exit::Help` and `Exit::Version`, exit code 0. `exit.exit()` prints each where it belongs and ends the process.
 - `m.get::<T>(name)` parses a value, and reports an option's bad value as a usage error.
+- `m.count(name)` is how many times a flag was given: `-vvv` is 3.
 - `m.error(msg)` makes a usage error for checks only the program can do.
 - No abbreviations. An option must be spelled out in full; a typo gets a suggestion instead.
 - Help that wraps to 100 columns, so it reads the same everywhere it is copied.
+
+A complete program is [`examples/tool.rs`](examples/tool.rs): `cargo run --example tool -- --help`, and `cargo run --example tool -- completions bash | bash -n` checks a script.
 
 ## Install
 
