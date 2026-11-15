@@ -46,12 +46,13 @@ match m.path().as_slice() {
 | `--tag <name...>` | Takes the words after it until the next option. Every option also collects a value each time it is repeated: `m.values("tag")` |
 | `<query>`, `[part]`, `<sample...>` | Arguments: required, optional, and the rest of the words. Read them with `m.arg("query")` and `m.args("sample")` |
 
-`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together), `.required()` (leaving it out is a usage error; the help says `(required)`) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
+`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together), `.required()` (leaving it out when its command runs is a usage error; the help says `(required)`; under a subcommand a parent's options are all optional) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
 
 - `.alias(..)`
 - `.summary(..)`, the command's line in its parent's list; without it, the first sentence of the description
 - `.after_help(..)`
 - `.subcommand_required()`
+- `.one_of(&[..])`, options of this command of which exactly one must be given: none is a usage error naming them, two is a conflict; the help marks each with the set
 - `.hide()`
 - `.opts(..)`, a set of options several commands share
 - `.completions()`, on the program: a `completions <shell>` command that prints a completion script for bash, zsh or fish, generated from the command tree (subcommands, aliases, options, choices); `completion_script(Shell)` gives the same text to the program

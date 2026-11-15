@@ -130,8 +130,10 @@ impl Opt {
         self
     }
 
-    /// It must be given: leaving it out is a usage error naming it, and the
-    /// help says so. Only an option that takes a value can be required.
+    /// It must be given when its command runs: leaving it out is a usage
+    /// error naming it, and the help says so. Only an option that takes a
+    /// value can be required. Under a subcommand it is optional, like the
+    /// rest of the parent's options there.
     pub fn required(mut self) -> Opt {
         assert!(self.takes != Takes::Nothing, "wcli: a flag can't be required ({})", self.flags());
         self.required = true;
@@ -250,6 +252,8 @@ pub struct Command {
     needs_command: bool,
     hidden: bool,
     completes: bool,
+    /// Sets of option names of which exactly one must be given.
+    one_of: Vec<Vec<String>>,
 }
 
 impl Command {
@@ -340,6 +344,25 @@ impl Command {
     /// A subcommand.
     pub fn command(mut self, command: Command) -> Command {
         self.commands.push(command);
+        self
+    }
+
+    /// Exactly one of these options (by name, declared on this command
+    /// before this call) must be given: none is a usage error naming them
+    /// all, two is a conflict. The help marks each with the set. Checked
+    /// when this command runs, like [`Opt::required`].
+    pub fn one_of(mut self, names: &[&str]) -> Command {
+        assert!(names.len() >= 2, "wcli: one_of on {} needs two or more options", self.name);
+        for n in names {
+            let opt = self.opts.iter().find(|o| o.name() == *n);
+            assert!(opt.is_some(), "wcli: one_of on {} names an option it doesn't have: {n}", self.name);
+            assert!(
+                !opt.is_some_and(|o| o.required),
+                "wcli: option {n} of {} is required and in a one_of set",
+                self.name
+            );
+        }
+        self.one_of.push(names.iter().map(|n| n.to_string()).collect());
         self
     }
 

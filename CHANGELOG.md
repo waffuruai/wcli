@@ -2,6 +2,11 @@
 
 Notable changes, newest first. Versions follow [semver](https://semver.org); every release is a `vX.Y.Z` tag on `main`.
 
+## 0.1.2 (2026-11-15)
+
+- `Opt::required()` is checked on the command that runs, for its own options: under a subcommand a parent's options are all optional, so a parent whose own run needs `--input` doesn't demand it of `parent verify`.
+- `Command::one_of(&[..])`: exactly one of a set of this command's options must be given. None is a usage error naming them all, two is a conflict, and the help marks each with `(one of --a, --b)`.
+
 ## 0.1.1 (2026-11-15)
 
 - `Opt::required()`: an option that must be given; leaving it out is a usage error naming it, and the help marks it `(required)`. A flag can't be required, and a required option can't have a default.
