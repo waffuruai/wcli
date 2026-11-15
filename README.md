@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/waffuruai/wcli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/waffuruai/wcli/actions/workflows/ci.yml)
 
-Command-line parsing for Waffuru's Rust tools, after [commander.js](https://github.com/tj/commander.js). You declare each command once, with options and arguments written the way its help shows them. From that, wcli generates the parser, the usage line, the help, and the errors. It has no dependencies and no macros. [`wpantry`](https://github.com/waffuruai/pantry) and ops' `wactivity` are built on it.
+Command-line parsing for Waffuru's Rust tools, inspired by [commander.js](https://github.com/tj/commander.js). You declare each command once, with options and arguments written the way its help shows them. From that, wcli generates the parser, the usage line, the help, and the errors. It has no dependencies and no macros. [`wpantry`](https://github.com/waffuruai/pantry) and others are built on it.
 
 ```rust
 use wcli::{Arg, Command, Opt};
