@@ -2,7 +2,7 @@
 
 Notable changes, newest first. Versions follow [semver](https://semver.org); every release is a `vX.Y.Z` tag on `main`.
 
-## 0.1.6 (unreleased)
+## 0.1.6 (2026-11-25)
 
 - `Opt::group("Scope")` lists an option under `Scope options:` in the help, each group in the order it first appears and before the plain `Options:`; a command with many options reads by what they are for. Parsing and completions are unchanged.
 - `Command::example(command, what)` lists command lines to copy under `Examples:`, right after the description.
