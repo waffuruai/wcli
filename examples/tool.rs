@@ -12,9 +12,11 @@ fn main() {
             .command(
                 Command::new("report")
                     .description("Show the latest report.")
+                    .example("tool report -o r.txt", "the findings, to a file")
+                    .example("tool report summary --json -o -", "the summary as JSON on stdout")
                     .arg(Arg::new("[part]", "what it covers").choices(&["findings", "summary"]).default("findings"))
-                    .option("--json", "as JSON")
-                    .opt(Opt::new("-o, --out <file>", "write it there").required())
+                    .opt(Opt::new("--json", "as JSON").group("Output"))
+                    .opt(Opt::new("-o, --out <file>", "write it there").required().group("Output"))
                     .opt(Opt::new("--since <days>", "how far back").default("14")),
             )
             .command(Command::new("schedule").subcommand_required().command(

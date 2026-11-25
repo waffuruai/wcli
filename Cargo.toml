@@ -3,7 +3,7 @@
 [package]
 name = "wcli"
 description = "Command-line parsing for Waffuru's tools, after commander.js: a command tree from specs, help, suggestions, no dependencies"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 rust-version = "1.97"
 license = "MIT"
