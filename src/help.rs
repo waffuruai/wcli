@@ -31,15 +31,20 @@ pub fn usage(chain: &[&Command]) -> String {
 }
 
 /// `text` wrapped to `width` columns, every line after the first indented
-/// by `indent`.
+/// by `indent`. A line of `text` that starts with spaces keeps them, and
+/// what wraps from it starts under its first word.
 fn wrap(text: &str, indent: usize, width: usize) -> String {
-    let room = width.saturating_sub(indent).max(20);
     let mut out = String::new();
-    for (n, para) in text.split('\n').enumerate() {
+    for (n, line) in text.split('\n').enumerate() {
         if n > 0 {
             out.push('\n');
             out.push_str(&" ".repeat(indent));
         }
+        let para = line.trim_start_matches(' ');
+        let lead = line.len() - para.len();
+        out.push_str(&" ".repeat(lead));
+        let indent = indent + lead;
+        let room = width.saturating_sub(indent).max(20);
         let mut col = 0;
         for word in para.split(' ') {
             let len = word.chars().count();
@@ -130,25 +135,36 @@ pub fn help(chain: &[&Command]) -> String {
     if !cmd.aliases.is_empty() {
         out.push_str(&format!("\nAlso: {}\n", cmd.aliases.join(", ")));
     }
+    out.push_str(&rows("Examples", &cmd.examples));
     let args: Vec<(String, String)> = cmd
         .args
         .iter()
         .map(|a| (a.name.clone(), format!("{}{}", a.help, extras(&a.choices, a.default.as_deref(), false, None))))
         .collect();
     out.push_str(&rows("Arguments", &args));
-    let mut opts: Vec<(String, String)> = cmd
-        .opts
-        .iter()
-        .filter(|o| !o.hidden)
-        .map(|o| {
-            let default = match o.takes {
-                Takes::Value { .. } => o.default.as_deref(),
-                Takes::Nothing => None,
-            };
-            let set = cmd.one_of.iter().find(|s| s.contains(&o.name())).map(Vec::as_slice);
-            (o.flags(), format!("{}{}", o.help, extras(&o.choices, default, o.required, set)))
-        })
-        .collect();
+    let row = |o: &crate::Opt| {
+        let default = match o.takes {
+            Takes::Value { .. } => o.default.as_deref(),
+            Takes::Nothing => None,
+        };
+        let set = cmd.one_of.iter().find(|s| s.contains(&o.name())).map(Vec::as_slice);
+        (o.flags(), format!("{}{}", o.help, extras(&o.choices, default, o.required, set)))
+    };
+    // Each group's options under its own title, in the order the groups
+    // first appear; the rest, with --help, under `Options:` after them.
+    let shown: Vec<&crate::Opt> = cmd.opts.iter().filter(|o| !o.hidden).collect();
+    let mut groups: Vec<&str> = Vec::new();
+    for g in shown.iter().filter_map(|o| o.group.as_deref()) {
+        if !groups.contains(&g) {
+            groups.push(g);
+        }
+    }
+    for g in groups {
+        let of: Vec<(String, String)> =
+            shown.iter().filter(|o| o.group.as_deref() == Some(g)).map(|o| row(o)).collect();
+        out.push_str(&rows(&format!("{g} options"), &of));
+    }
+    let mut opts: Vec<(String, String)> = shown.iter().filter(|o| o.group.is_none()).map(|o| row(o)).collect();
     if chain.len() == 1 && cmd.version.is_some() {
         opts.push(("-V, --version".into(), "print the version".into()));
     }
