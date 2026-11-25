@@ -2,6 +2,11 @@
 
 Notable changes, newest first. Versions follow [semver](https://semver.org); every release is a `vX.Y.Z` tag on `main`.
 
+## 0.1.3 (2026-11-25)
+
+- The crate is formatted with the org-wide `rustfmt.toml` (stable rustfmt only); no API or behaviour change.
+- Builds and CI use Rust 1.100.0 (`rust-toolchain.toml`); `rust-version` stays 1.97.
+
 ## 0.1.2 (2026-11-15)
 
 - `Opt::required()` is checked on the command that runs, for its own options: under a subcommand a parent's options are all optional, so a parent whose own run needs `--input` doesn't demand it of `parent verify`.

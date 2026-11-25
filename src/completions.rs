@@ -272,7 +272,7 @@ fn fish(root: &Command, nodes: &[Node]) -> String {
                 line.push_str(&format!(" -l {l}"));
             }
             match &o.takes {
-                Takes::Nothing => {}
+                Takes::Nothing => {},
                 Takes::Value { .. } if o.choices.is_empty() => line.push_str(" -r -F"),
                 Takes::Value { .. } => line.push_str(&format!(" -x -a {}", sq(&o.choices.join(" ")))),
             }
