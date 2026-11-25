@@ -212,7 +212,7 @@ pub fn parse<S: AsRef<str>>(root: &Command, argv: &[S]) -> Result<Matches, Exit>
                     let close: Vec<String> = close.iter().map(|n| format!("--{n}")).collect();
                     let close: Vec<&str> = close.iter().map(String::as_str).collect();
                     return Err(fail(&chain, format!("unknown option '--{name}'{}", did_you_mean(&close))));
-                }
+                },
             }
         } else {
             let mut chars = word[1..].chars();
@@ -243,27 +243,27 @@ pub fn parse<S: AsRef<str>>(root: &Command, argv: &[S]) -> Result<Matches, Exit>
                         record(&chain, &mut given, f, None)?;
                     }
                     continue;
-                }
+                },
             }
         };
         let value = match (&opt.takes, inline) {
             (Takes::Nothing, Some(v)) => {
                 return Err(fail(&chain, format!("option '{}' takes no value, got '{v}'", opt.shown())));
-            }
+            },
             (Takes::Nothing, None) => None,
             (Takes::Value { .. }, Some(v)) => Some(v),
             // A required value is the next word whatever it is (`-o -`).
             (Takes::Value { required: true, .. }, None) if i < argv.len() => {
                 i += 1;
                 Some(argv[i - 1].to_string())
-            }
+            },
             (Takes::Value { required: true, .. }, None) => {
                 return Err(fail(&chain, format!("option '{}' argument missing", opt.shown())));
-            }
+            },
             (Takes::Value { required: false, .. }, None) if i < argv.len() && !argv[i].starts_with('-') => {
                 i += 1;
                 Some(argv[i - 1].to_string())
-            }
+            },
             (Takes::Value { required: false, .. }, None) => None,
         };
         record(&chain, &mut given, opt, value)?;
@@ -291,11 +291,11 @@ pub fn parse<S: AsRef<str>>(root: &Command, argv: &[S]) -> Result<Matches, Exit>
             [] => {
                 let names: Vec<String> = set.iter().map(|n| format!("'{}'", shown(n))).collect();
                 return Err(fail(&chain, format!("one of options {} is required", names.join(", "))));
-            }
-            [_] => {}
+            },
+            [_] => {},
             [a, b, ..] => {
                 return Err(fail(&chain, format!("option '{}' cannot be used with option '{}'", shown(b), shown(a))));
-            }
+            },
         }
     }
     if root.completes && chain.len() == 2 && cmd.name == "completions" {

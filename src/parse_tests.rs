@@ -155,7 +155,7 @@ fn a_required_option_must_be_given() {
                 t.starts_with("Usage: tool send [options]\nerror: missing required option '--to <address>'\n"),
                 "{t}"
             )
-        }
+        },
         other => panic!("{other:?}"),
     }
     assert!(matches!(p.parse(&["send", "--help"]), Err(Exit::Help(_))), "help wins over the check");
@@ -212,7 +212,7 @@ fn exactly_one_of_a_set_must_be_given() {
     match p.parse(&["generate", "--json"]) {
         Err(Exit::Error(t)) => {
             assert!(t.ends_with("error: one of options '--model <name>', '--checkpoint <path>' is required\n"), "{t}")
-        }
+        },
         other => panic!("{other:?}"),
     }
     match p.parse(&["generate", "--model", "m", "--checkpoint", "p"]) {
