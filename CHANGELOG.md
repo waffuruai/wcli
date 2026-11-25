@@ -2,6 +2,10 @@
 
 Notable changes, newest first. Versions follow [semver](https://semver.org); every release is a `vX.Y.Z` tag on `main`.
 
+## 0.1.4 (2026-11-25)
+
+- Releases are published to crates.io by the release workflow, through trusted publishing; no API or behaviour change. 0.1.3 was released on GitHub only and is not on crates.io.
+
 ## 0.1.3 (2026-11-25)
 
 - The crate is formatted with the org-wide `rustfmt.toml` (stable rustfmt only); no API or behaviour change.
