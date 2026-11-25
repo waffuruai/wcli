@@ -107,7 +107,7 @@ Branches: pull requests go into `dev` (squash); `main` takes `dev` by a merge or
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
 
-[`release.yml`](.github/workflows/release.yml) checks the tag is on `main` and matches `Cargo.toml`, runs the tests, packages the crate and publishes a GitHub Release with generated notes and the `.crate` file. Publishing to crates.io is by hand for now, from a checkout of the tag: `cargo publish --locked`, with a token that can publish updates. Then bump the pin in each dependent.
+[`release.yml`](.github/workflows/release.yml) checks the tag is on `main` and matches `Cargo.toml`, runs the tests, packages the crate, publishes a GitHub Release with generated notes and the `.crate` file, and then publishes the crate to [crates.io](https://crates.io/crates/wcli) through trusted publishing: crates.io trusts this workflow, so no token is stored. A version already on crates.io is skipped, so the workflow can be run again from the tag (`gh workflow run release.yml --ref vX.Y.Z`). Then bump the pin in each dependent.
 
 ## License
 

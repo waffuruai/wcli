@@ -1,11 +1,27 @@
 name: Release
 
-# A vX.Y.Z tag on main publishes a GitHub Release with generated notes, after
-# the tag's version matches Cargo.toml and the crate packages. Publishing to
-# crates.io is by hand for now (README.md, Releasing).
+# A vX.Y.Z tag on main publishes a GitHub Release with generated notes and
+# then the crate to crates.io, after the tag's version matches Cargo.toml, the
+# tests pass and the crate packages.
+#
+# crates.io is reached through trusted publishing: crates.io trusts this
+# workflow in this repository (the crate's Settings > Trusted Publishing) and
+# exchanges the job's OIDC identity for a token that lives for the publish
+# step. No registry token is stored anywhere.
+#
+# To publish a tag again (a failed upload, or a tag released before crates.io
+# publishing was wired), run this workflow from the tag:
+#   gh workflow run release.yml --repo waffuruai/wcli --ref vX.Y.Z
+# A version already on crates.io is skipped, so a rerun is safe.
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+
+# One publish at a time per tag, and never cancel one.
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -17,10 +33,18 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write # the release
+      id-token: write # crates.io trusted publishing
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      - name: The run is on a release tag
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::run this workflow from a vX.Y.Z tag, not $GITHUB_REF"; exit 1 ;;
+          esac
 
       - name: The tag is on main and matches Cargo.toml
         run: |
@@ -45,3 +69,23 @@ jobs:
           gh release create "$GITHUB_REF_NAME" target/package/wcli-*.crate \
             --verify-tag --title "wcli $GITHUB_REF_NAME" --generate-notes ||
             gh release upload "$GITHUB_REF_NAME" target/package/wcli-*.crate --clobber
+
+      # After the GitHub release, so a crates.io failure leaves a release that
+      # a rerun completes. --no-verify: the package step above already built
+      # the packaged crate; building again here would run with the registry
+      # token in reach.
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: crates-io
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io.outputs.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          code="$(curl -sS -o /dev/null -w '%{http_code}' -A 'waffuruai/wcli release workflow' \
+            "https://crates.io/api/v1/crates/wcli/$version")"
+          case "$code" in
+            200) echo "wcli $version is already on crates.io" ;;
+            404) cargo publish --locked --no-verify ;;
+            *) echo "::error::crates.io answered $code for wcli $version"; exit 1 ;;
+          esac
