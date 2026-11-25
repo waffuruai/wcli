@@ -31,6 +31,9 @@ jobs:
     name: Publish the release
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The trusted publisher on crates.io names this environment, and refuses a
+    # token for a job that runs outside it.
+    environment: release
     permissions:
       contents: write # the release
       id-token: write # crates.io trusted publishing
