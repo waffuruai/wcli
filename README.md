@@ -46,11 +46,12 @@ match m.path().as_slice() {
 | `--tag <name...>` | Takes the words after it until the next option. Every option also collects a value each time it is repeated: `m.values("tag")` |
 | `<query>`, `[part]`, `<sample...>` | Arguments: required, optional, and the rest of the words. Read them with `m.arg("query")` and `m.args("sample")` |
 
-`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together), `.required()` (leaving it out when its command runs is a usage error; the help says `(required)`; under a subcommand a parent's options are all optional) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
+`Opt` adds `.choices(&[..])`, `.default(..)`, `.conflicts(&[..])` (options that can't be given together), `.group("Scope")` (the help lists it under `Scope options:`, each group in the order it first appears, before the plain `Options:`), `.required()` (leaving it out when its command runs is a usage error; the help says `(required)`; under a subcommand a parent's options are all optional) and `.hide()`. `Arg` adds `.choices` and `.default`. `Command` adds:
 
 - `.alias(..)`
 - `.summary(..)`, the command's line in its parent's list; without it, the first sentence of the description
-- `.after_help(..)`
+- `.example(command, what)`, a command line to copy and what it does, listed under `Examples:` right after the description
+- `.after_help(..)`, text after the options (exit codes); a line's leading spaces are kept
 - `.subcommand_required()`
 - `.one_of(&[..])`, options of this command of which exactly one must be given: none is a usage error naming them, two is a conflict; the help marks each with the set
 - `.hide()`

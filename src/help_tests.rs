@@ -67,3 +67,47 @@ fn aliases_show_where_they_are_declared() {
     assert!(root.help_for(&[]).unwrap().contains("  export|ex"));
     assert!(root.help_for(&["ex"]).unwrap().contains("Also: ex"));
 }
+
+#[test]
+fn examples_come_first_and_options_read_by_group() {
+    let root = Command::new("t").command(
+        Command::new("scan")
+            .description("scans.")
+            .example("t scan", "everything")
+            .example("t scan --path ~/code", "one directory")
+            .opt(Opt::new("--path <dir>", "only there").group("Scope"))
+            .option("--json", "as JSON")
+            .opt(Opt::new("--deep", "everything in scope").group("Scope"))
+            .opt(Opt::new("--jobs <n>", "at once").group("Speed"))
+            .opt(Opt::new("--old", "gone").group("Speed").hide())
+            .after_help("Exit codes: 0 fine."),
+    );
+    let text = root.help_for(&["scan"]).unwrap();
+    assert_eq!(
+        text,
+        "Usage: t scan [options]\n\nscans.\n\n\
+         Examples:\n  t scan                everything\n  t scan --path ~/code  one directory\n\n\
+         Scope options:\n  --path <dir>  only there\n  --deep        everything in scope\n\n\
+         Speed options:\n  --jobs <n>  at once\n\n\
+         Options:\n  --json      as JSON\n  -h, --help  print this help\n\n\
+         Exit codes: 0 fine.\n"
+    );
+    // Grouped or not, an option parses the same.
+    let m = root.parse(&["scan", "--deep", "--jobs", "2", "--old"]).unwrap();
+    assert!(m.flag("deep") && m.flag("old") && m.value("jobs") == Some("2"));
+    // A group of hidden options alone has no section.
+    let quiet = Command::new("t").opt(Opt::new("--x", "x").group("Old").hide()).help_for(&[]).unwrap();
+    assert!(!quiet.contains("Old options"), "{quiet}");
+}
+
+#[test]
+fn text_after_the_options_keeps_its_indentation() {
+    let text =
+        Command::new("t").after_help("Parts:\n  findings  the latest\n  all       every log").help_for(&[]).unwrap();
+    assert!(text.ends_with("\nParts:\n  findings  the latest\n  all       every log\n"), "{text}");
+    // What wraps from an indented line starts under it.
+    let long = format!("  {}", "word ".repeat(30).trim());
+    let wrapped = wrap(&long, 0, 40);
+    assert!(wrapped.lines().all(|l| l.starts_with("  word") && l.chars().count() <= 40), "{wrapped}");
+    assert_eq!(wrap("a\n  b", 0, 80), "a\n  b");
+}

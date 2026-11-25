@@ -72,6 +72,7 @@ pub struct Opt {
     conflicts: Vec<String>,
     required: bool,
     hidden: bool,
+    group: Option<String>,
 }
 
 impl Opt {
@@ -109,7 +110,17 @@ impl Opt {
             conflicts: Vec::new(),
             required: false,
             hidden: false,
+            group: None,
         }
+    }
+
+    /// The section of the help it is listed under: `.group("Scope")` puts
+    /// it under `Scope options:`, with the other options of that group, in
+    /// the order the groups first appear and before the plain `Options:`.
+    /// A command with many options reads by what they are for.
+    pub fn group(mut self, name: &str) -> Opt {
+        self.group = Some(name.to_string());
+        self
     }
 
     /// The values it accepts; any other is an error naming these.
@@ -246,6 +257,7 @@ pub struct Command {
     description: String,
     summary: Option<String>,
     after: String,
+    examples: Vec<(String, String)>,
     opts: Vec<Opt>,
     args: Vec<Arg>,
     commands: Vec<Command>,
@@ -286,9 +298,18 @@ impl Command {
         self
     }
 
-    /// Text after the options in the help (exit codes, examples).
+    /// Text after the options in the help (exit codes). A line's leading
+    /// spaces are kept, and its wrapped lines start under them.
     pub fn after_help(mut self, text: &str) -> Command {
         self.after = text.to_string();
+        self
+    }
+
+    /// A command line to copy and what it does, listed under `Examples:`
+    /// right after the description, before the arguments and options: what
+    /// most people came to the help for.
+    pub fn example(mut self, command: &str, what: &str) -> Command {
+        self.examples.push((command.to_string(), what.to_string()));
         self
     }
 
